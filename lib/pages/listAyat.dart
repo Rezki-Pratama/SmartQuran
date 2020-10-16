@@ -4,6 +4,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:smart_quran/model/model_listayat.dart';
+import 'package:smart_quran/pages/detail_ayat.dart';
 
 class ListAyat extends StatefulWidget {
   @override
@@ -23,7 +24,6 @@ class _ListAyatState extends State<ListAyat> {
 
     if (response.statusCode == 200) {
       var notesJson = json.decode(utf8.decode(response.bodyBytes));
-      print(notesJson['hasil']);
       for (var noteJson in notesJson['hasil']) {
         faqs.add(ModelListAyat.fromJson(noteJson));
       }
@@ -37,7 +37,6 @@ class _ListAyatState extends State<ListAyat> {
   @override
   void initState() {
     fetchNotes().then((value) {
-      print(value);
       setState(() {
         _faq.addAll(value);
         _faqForDisplay = _faq;
@@ -63,14 +62,14 @@ class _ListAyatState extends State<ListAyat> {
                     Navigator.pop(context);
                   },
                 ),
-                Center(
-                    child: Text(
+                SizedBox(width: MediaQuery.of(context).size.width / 8),
+                Text(
                   'Smart Quran',
                   style: TextStyle(
                       color: Color(0xFF4ba592),
-                      fontSize: 30,
+                      fontSize: 25,
                       fontWeight: FontWeight.bold),
-                ))
+                )
               ],
             ),
           ),
@@ -86,17 +85,37 @@ class _ListAyatState extends State<ListAyat> {
                 padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: ListView(primary: false, children: <Widget>[
                   Padding(
-                      padding: EdgeInsets.only(top: 3.0, bottom: 10, left: 3),
-                      child: Container(
-                          height: MediaQuery.of(context).size.height,
-                          child: ListView.builder(
-                            itemBuilder: (context, index) {
-                              return index == 0
-                                  ? _searchBar()
-                                  : _listItem(index - 1);
+                      padding: EdgeInsets.only(top: 0, bottom: 0, left: 3),
+                      child: Column(
+                        children: [
+                          _searchBar(),
+                          FutureBuilder(
+                            future: fetchNotes(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState ==
+                                  ConnectionState.done) {
+                                return Container(
+                                    height: MediaQuery.of(context).size.height /
+                                        1.3,
+                                    child: ListView.builder(
+                                      itemBuilder: (context, index) {
+                                        return _listItem(index);
+                                      },
+                                      itemCount: _faqForDisplay.length,
+                                    ));
+                              } else if (snapshot.connectionState ==
+                                  ConnectionState.waiting) {
+                                return Center(
+                                    child: CircularProgressIndicator());
+                              } else {
+                                return Center(
+                                  child: Text('Periksa Koneksi Anda'),
+                                );
+                              }
                             },
-                            itemCount: _faqForDisplay.length + 1,
-                          ))),
+                          ),
+                        ],
+                      )),
                 ]),
               ),
             ),
@@ -140,7 +159,13 @@ class _ListAyatState extends State<ListAyat> {
 
   _listItem(index) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+              builder: (context) => DetailAyat(todo: _faqForDisplay[index])),
+        );
+      },
       child: Card(
         elevation: 10,
         shape: RoundedRectangleBorder(
@@ -168,7 +193,7 @@ class _ListAyatState extends State<ListAyat> {
                         _faqForDisplay[index].nomor,
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 17,
+                            fontSize: 14,
                             color: Colors.white),
                       )),
                     ],
